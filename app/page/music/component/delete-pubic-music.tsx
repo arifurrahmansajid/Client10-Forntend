@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 export default function DeletePublicAudio() {
   const mutation = useMutation(true);
   const socket = useSocket();
-  const { currentTab } = useContext(Context);
+  const { currentTab, user } = useContext(Context);
   const { deleteDisabled } = useDisable("/delete");
   const handleDelete = async () => {
     if (deleteDisabled) return;
@@ -22,13 +22,16 @@ export default function DeletePublicAudio() {
     const res = await mutation<{ message: string }>({
       url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/music/delete-public`,
       method: "DELETE",
-      // Don't send Authorization header for public delete
+      headers: {
+        Authorization: getCookie("token=") || "",
+      },
     });
     if (res?.message) {
       socket?.emit("new-file-uploaded-all");
       toast.success(res.message);
     }
   };
+  if (!user || user.roles !== "admin") return null;
   return (
     <Button
       onClick={() => {

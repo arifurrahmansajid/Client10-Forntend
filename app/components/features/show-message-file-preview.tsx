@@ -92,6 +92,6 @@ export default function ShowMessageFilePreview({ file }: { file: string }) {
     );
   }
   if (MUSIC.includes(preview.type)) {
-    return <audio src={preview.preview} controls className="w-75" />;
+    return preview.preview ? <audio src={preview.preview} controls className="w-75" /> : null;
   }
 }

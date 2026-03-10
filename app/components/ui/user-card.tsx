@@ -13,6 +13,7 @@ import {
 import { Page } from "@/app/utils/constant";
 import PictureModal from "../features/picture-modal";
 import { useVideoCall } from "@/app/utils/video-call-context";
+import toast from "react-hot-toast";
 
 export default function UserCard({
   user,
@@ -75,6 +76,21 @@ export default function UserCard({
       });
     }
   };
+
+  const handleAdminDeleteUser = async () => {
+    if (!confirm(`Are you sure you want to delete user ${user.name}?`)) return;
+    const res = await mutation<{ message: string }>({
+      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${user._id}`,
+      method: "DELETE",
+      headers: {
+        Authorization: getCookie("token=") || "",
+      },
+    });
+    if (res) {
+      toast.success(res.message);
+      socket?.emit("user-deleted", user);
+    }
+  };
   return (
     <article className="w-[25rem] flex items-center justify-between my-1 pr-[1rem] overflow-hidden">
       <PictureModal
@@ -121,6 +137,9 @@ export default function UserCard({
           >
             {user.name}
           </Button>
+          {currentUser?.roles.includes("admin") && user.ip && (
+            <span className="text-xs text-red-500 mx-2">{user.ip}</span>
+          )}
           <Button
             className="ml-auto"
             onClick={() => {
@@ -134,6 +153,17 @@ export default function UserCard({
           >
             {user.race}
           </Button>
+          {currentUser?.roles.includes("admin") &&
+            user._id !== currentUser._id && (
+              <Button
+                className="ml-2 !bg-red-600 hover:!bg-red-700"
+                onClick={() => {
+                  void handleAdminDeleteUser();
+                }}
+              >
+                Delete
+              </Button>
+            )}
         </div>
       </div>
     </article>

@@ -71,7 +71,7 @@ export default function Chat() {
           message: roomId || message,
           sentTo: currentlyChattingWith?._id,
           files: previews.map((file) => file.url),
-          token: getCookie("access_token="),
+          token: getCookie("token="),
         }),
       });
       if (res?.chat) {

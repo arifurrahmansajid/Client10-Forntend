@@ -157,14 +157,20 @@ export default function GlobalAudioPlayer() {
         </Button>
         <Button className="opacity-0 pointer-events-none">Private</Button>
       </div>
-      <audio
-        src={!audioSrc.length ? "" : audioSrc}
-        key={audioSrc}
-        controls
-        autoPlay
-        loop
-        preload="auto"
-      ></audio>
+      {audioSrc ? (
+        <audio
+          src={audioSrc}
+          key={audioSrc}
+          controls
+          autoPlay
+          loop
+          preload="auto"
+        ></audio>
+      ) : (
+        <div className="h-[54px] w-full flex items-center justify-center bg-white/5 border border-white/10 rounded-lg text-white/40 text-sm italic">
+          No music selected
+        </div>
+      )}
 
       <div className="flex items-center justify-center gap-x-6 mt-3 w-full">
         <Button

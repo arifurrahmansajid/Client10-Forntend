@@ -90,6 +90,19 @@ export default function Navbar() {
               Music
             </Button>
           </li>
+          {user?.roles.includes("admin") && (
+            <li>
+              <Button
+                onClick={() => {
+                  setCurrentPage(Page.admin);
+                  setProfileId("");
+                  setCurrentTab("");
+                }}
+              >
+                Admin
+              </Button>
+            </li>
+          )}
           <li>
             <Button
               onClick={() => {

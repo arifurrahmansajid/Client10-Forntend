@@ -79,7 +79,13 @@ export default function MusicCard({
   };
   return (
     <div className="w-full lg:w-[49%] h-fit self-start">
-      <audio src={music.url} controls className="w-full" />
+      {music.url ? (
+        <audio src={music.url} controls className="w-full" />
+      ) : (
+        <div className="w-full h-[54px] bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-white/40 italic text-sm">
+          Invalid audio source
+        </div>
+      )}
       <div className="flex items-center justify-start gap-x-6 mt-1">
         <Button
           onClick={() => {

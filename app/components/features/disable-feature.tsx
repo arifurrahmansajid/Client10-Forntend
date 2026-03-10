@@ -22,25 +22,22 @@ export default function DisbaleFeature({ path }: DisbaleFeatureProps) {
   const handleRenderProperButton = () => {
     switch (path) {
       case "/chat":
-        if (chatDisabled) return "Disable Chat";
-        return "Enable Chat";
+        return chatDisabled ? "Enable Chat" : "Disable Chat";
 
       case "/upload":
-        if (uploadDisabled) return "Disable Upload";
-        return "Enable Upload";
+        return uploadDisabled ? "Enable Upload" : "Disable Upload";
 
       case "/delete":
-        if (deleteDisabled) return "Disable Delete";
-        return "Enable Delete";
+        return deleteDisabled ? "Enable Delete" : "Disable Delete";
+
       case "/music":
-        if (musicDisabled) return "Disable Background";
-        return "Enable Background";
+        return musicDisabled ? "Enable Music" : "Disable Music";
+
       case "/bg":
-        if (backgroundDisabled) return "Disable Background";
-        return "Enable Background";
+        return backgroundDisabled ? "Enable Background" : "Disable Background";
 
       default:
-        break;
+        return "Toggle";
     }
   };
   return (

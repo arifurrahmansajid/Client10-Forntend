@@ -232,7 +232,7 @@ export default function Upload({
           const isImage = accept.includes("image") || [".jpg", ".jpeg", ".png", ".svg", ".webp"].some(ext => accept.includes(ext));
           const isVideo = accept.includes("video");
           const isAudio = accept.includes("audio");
-          
+
           return (
             <div
               key={file.id}
@@ -240,7 +240,7 @@ export default function Upload({
             >
               <div className="flex items-center gap-4">
                 {isVideo ? (
-                   <video src={file.preview} className="w-16 h-16 object-cover rounded-lg shadow-lg" muted />
+                  <video src={file.preview} className="w-16 h-16 object-cover rounded-lg shadow-lg" muted />
                 ) : isImage ? (
                   <div className="relative w-16 h-16 rounded-lg overflow-hidden shadow-lg border border-white/10">
                     <Image
@@ -253,28 +253,28 @@ export default function Upload({
                   </div>
                 ) : (
                   <div className="w-16 h-16 bg-gradient-to-br from-white/10 to-white/5 rounded-lg flex items-center justify-center border border-white/10 shadow-lg">
-                     <span className="text-[10px] font-bold text-center px-1 break-all tracking-tighter opacity-80">{file.name.split('.').pop()?.toUpperCase()}</span>
+                    <span className="text-[10px] font-bold text-center px-1 break-all tracking-tighter opacity-80">{file.name.split('.').pop()?.toUpperCase()}</span>
                   </div>
                 )}
                 <div className="flex flex-col">
-                   <span className="lg:text-base text-sm font-semibold max-w-[200px] truncate text-white/90">
+                  <span className="lg:text-base text-sm font-semibold max-w-[200px] truncate text-white/90">
                     {file.name}
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-widest opacity-40">{file.size} MB</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <div className="flex flex-col items-end gap-1.5 min-w-[100px]">
                   <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-300 ease-out"
                       style={{ width: `${file.progress}%` }}
                     />
                   </div>
                   <span className="text-[10px] font-mono font-bold text-blue-400">{file.progress}%</span>
                 </div>
-                
+
                 {showXbutton && (
                   <Button
                     onClick={() => void handleDeleteFile(file.url)}

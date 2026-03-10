@@ -21,6 +21,7 @@ export default function Home() {
     Register: null | (() => React.JSX.Element);
     Profile: null | (() => React.JSX.Element);
     PublicProfile: null | (() => React.JSX.Element);
+    AdminPage: null | (() => React.JSX.Element);
   }>({
     GIF: null,
     ImagePage: null,
@@ -29,6 +30,7 @@ export default function Home() {
     Register: null,
     Profile: null,
     PublicProfile: null,
+    AdminPage: null,
   });
 
   // Load additional pages after initial render
@@ -44,9 +46,10 @@ export default function Home() {
       import("./page/register/register-page"),
       import("./page/profile/profile-page"),
       import("./page/public-profile/public-profile"),
+      import("./page/admin/admin-page"),
     ])
       .then(
-        ([GIF, ImagePage, Music, Video, Register, Profile, PublicProfile]) => {
+        ([GIF, ImagePage, Music, Video, Register, Profile, PublicProfile, AdminPage]) => {
           setComponents({
             GIF: GIF.default,
             ImagePage: ImagePage.default,
@@ -55,6 +58,7 @@ export default function Home() {
             Register: Register.default,
             Profile: Profile.default,
             PublicProfile: PublicProfile.default,
+            AdminPage: AdminPage.default,
           });
         }
       )
@@ -69,17 +73,17 @@ export default function Home() {
         url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/token`,
         method: "GET",
       });
-      const cookieExists = getCookie("access_token=");
+      const cookieExists = getCookie("token=");
       if (!cookieExists) {
         if (res?.token) {
-          document.cookie = `access_token=${res.token}; path=/;`;
+          document.cookie = `token=${res.token}; path=/;`;
         }
       }
     };
     void handleSetCookie();
   }, []);
 
-  const { GIF, ImagePage, Music, Video, Register, Profile, PublicProfile } =
+  const { GIF, ImagePage, Music, Video, Register, Profile, PublicProfile, AdminPage } =
     components;
 
   return (
@@ -96,6 +100,7 @@ export default function Home() {
       {currentPage === Page.register && Register && <Register />}
       {currentPage === Page.profile && Profile && <Profile />}
       {currentPage === Page.publicProfile && PublicProfile && <PublicProfile />}
+      {currentPage === Page.admin && AdminPage && <AdminPage />}
     </section>
   );
 }
