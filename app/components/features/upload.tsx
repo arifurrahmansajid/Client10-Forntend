@@ -77,82 +77,113 @@ export default function Upload({
     const token = getCookie("token=") || "";
 
     try {
-      // 1. Initialize
-      const initRes = await fetch(`${backendUrl}/upload/init`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: publicUpload ? "" : token,
-        },
-        body: JSON.stringify({ fileName: file.name, totalChunks }),
-      });
-
-      if (!initRes.ok) throw new Error("Failed to initialize upload");
-      const { uploadId } = await initRes.json();
-
-      // 2. Upload Chunks
-      const chunkProgress = new Array(totalChunks).fill(0);
-      const updateOverallProgress = () => {
-        const totalUploaded = chunkProgress.reduce((a, b) => a + b, 0);
-        const percent = Math.round((totalUploaded / file.size) * 100);
-        setFilePreview((prev) =>
-          prev.map((p) => (p.id === fileObj.id ? { ...p, progress: percent } : p))
-        );
-      };
-
-      const uploadChunk = async (index: number) => {
-        const start = index * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, file.size);
-        const chunk = file.slice(start, end);
+      if (url) {
+        // Standard single-file upload (used for Profile Pic, etc.)
         const formData = new FormData();
-        formData.append("chunk", chunk);
-        formData.append("uploadId", uploadId);
-        formData.append("chunkIndex", index.toString());
+        formData.append("files", file);
 
-        const res = await fetch(`${backendUrl}/upload/chunk`, {
-          method: "POST",
+        const res = await fetch(url, {
+          method: method || "POST",
           headers: {
             Authorization: publicUpload ? "" : token,
           },
           body: formData,
         });
 
-        if (!res.ok) throw new Error(`Failed to upload chunk ${index}`);
-        chunkProgress[index] = end - start;
-        updateOverallProgress();
-      };
+        if (!res.ok) throw new Error("Failed to upload file");
+        
+        // Emulate progress since we can't track it with standard fetch easily
+        setFilePreview((prev) =>
+          prev.map((p) => (p.id === fileObj.id ? { ...p, progress: 100 } : p))
+        );
 
-      // Concurrent chunk uploads
-      const queue = Array.from({ length: totalChunks }, (_, i) => i);
-      const workers = Array.from({ length: Math.min(totalChunks, CONCURRENT_UPLOADS) }, async () => {
-        while (queue.length > 0) {
-          const index = queue.shift()!;
-          await uploadChunk(index);
-        }
-      });
-      await Promise.all(workers);
+        const resData = await res.json();
+        
+        setFilePreview((prev) =>
+          prev.map((p) =>
+            p.id === fileObj.id
+              ? { ...p, progress: 100, url: resData.url ? resData.url[0] : undefined }
+              : p
+          )
+        );
+      } else {
+        // Chunked multi-part upload for large files (default backend `/upload` API)
+        const initRes = await fetch(`${backendUrl}/upload/init`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: publicUpload ? "" : token,
+          },
+          body: JSON.stringify({ fileName: file.name, totalChunks }),
+        });
 
-      // 3. Complete
-      const fileType = rest.accept?.split("/")[0] || "file";
-      const completeRes = await fetch(`${backendUrl}/upload/complete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: publicUpload ? "" : token,
-        },
-        body: JSON.stringify({ uploadId, fileName: file.name, totalChunks, fileType }),
-      });
+        if (!initRes.ok) throw new Error("Failed to initialize upload");
+        const { uploadId } = await initRes.json();
 
-      if (!completeRes.ok) throw new Error("Failed to complete upload");
-      const resData = await completeRes.json();
+        // 2. Upload Chunks
+        const chunkProgress = new Array(totalChunks).fill(0);
+        const updateOverallProgress = () => {
+          const totalUploaded = chunkProgress.reduce((a, b) => a + b, 0);
+          const percent = Math.round((totalUploaded / file.size) * 100);
+          setFilePreview((prev) =>
+            prev.map((p) => (p.id === fileObj.id ? { ...p, progress: percent } : p))
+          );
+        };
 
-      setFilePreview((prev) =>
-        prev.map((p) =>
-          p.id === fileObj.id
-            ? { ...p, progress: 100, url: resData.url[0] }
-            : p
-        )
-      );
+        const uploadChunk = async (index: number) => {
+          const start = index * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, file.size);
+          const chunk = file.slice(start, end);
+          const formData = new FormData();
+          formData.append("chunk", chunk);
+          formData.append("uploadId", uploadId);
+          formData.append("chunkIndex", index.toString());
+
+          const res = await fetch(`${backendUrl}/upload/chunk`, {
+            method: "POST",
+            headers: {
+              Authorization: publicUpload ? "" : token,
+            },
+            body: formData,
+          });
+
+          if (!res.ok) throw new Error(`Failed to upload chunk ${index}`);
+          chunkProgress[index] = end - start;
+          updateOverallProgress();
+        };
+
+        // Concurrent chunk uploads
+        const queue = Array.from({ length: totalChunks }, (_, i) => i);
+        const workers = Array.from({ length: Math.min(totalChunks, CONCURRENT_UPLOADS) }, async () => {
+          while (queue.length > 0) {
+            const index = queue.shift()!;
+            await uploadChunk(index);
+          }
+        });
+        await Promise.all(workers);
+
+        // 3. Complete
+        const fileType = rest.accept?.split("/")[0] || "file";
+        const completeRes = await fetch(`${backendUrl}/upload/complete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: publicUpload ? "" : token,
+          },
+          body: JSON.stringify({ uploadId, fileName: file.name, totalChunks, fileType }),
+        });
+
+        if (!completeRes.ok) throw new Error("Failed to complete upload");
+        const resData = await completeRes.json();
+
+        setFilePreview((prev) =>
+          prev.map((p) =>
+            p.id === fileObj.id
+              ? { ...p, progress: 100, url: resData.url[0] }
+              : p
+          )
+        );
+      }
 
       socket?.emit("new-file-uploaded");
       if (cb) cb();
