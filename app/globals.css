@@ -1,0 +1,159 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #000000;
+}
+
+:root {
+  --foreground: #000000;
+}
+html {
+  background-color: var(--foreground);
+}
+* {
+  scrollbar-width: none;
+}
+
+*:focus-visible {
+  border-radius: 0px;
+  outline: 0px;
+  border: 0px;
+  background-color: transparent;
+}
+
+input:focus-visible {
+  border: 0px;
+  background-color: transparent;
+}
+
+body {
+  background: var(--foreground);
+  color: white;
+  overflow-x: hidden;
+}
+
+progress::-webkit-progress-bar {
+  background-color: #eee;
+}
+
+progress::-webkit-progress-value {
+  background-color: #1e8fff;
+}
+
+progress::-moz-progress-bar {
+  background-color: #1e8fff;
+}
+
+progress::-ms-fill {
+  background-color: #1e8fff;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1); /* Inverts color (black to white) */
+}
+
+.selected-flag:hover,
+.selected-flag:focus,
+.selected-flag:focus-visible {
+  background-color: var(--foreground) !important;
+  border: 0px;
+}
+.flag-dropdown .open {
+  background-color: var(--foreground) !important;
+  border: 0px;
+}
+.flag-dropdown.open {
+  background-color: var(--foreground) !important;
+}
+.country-list .search {
+  background-color: var(--foreground) !important;
+}
+
+.country-list .country:hover {
+  background-color: var(--foreground) !important;
+}
+.country-list .highlight {
+  background-color: var(--foreground) !important;
+}
+
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-slide {
+  text-align: center;
+  font-size: 18px;
+  background: var(--foreground);
+
+  /* Center slide text vertically */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.swiper-button-next {
+  width: 60px;
+  height: 40px;
+}
+
+.swiper-button-next::before {
+  content: "\2192";
+  color: white;
+  transform: scale(2);
+}
+.swiper-button-next::after {
+  display: none;
+}
+
+.swiper-button-prev {
+  width: 60px;
+  height: 40px;
+}
+
+.swiper-button-prev::before {
+  content: "\2190";
+  color: white;
+  transform: scale(2);
+}
+.swiper-button-prev::after {
+  display: none;
+}
+.search-box::placeholder {
+  text-transform: capitalize;
+  color: white;
+}
+.dial-code {
+  color: white !important;
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+  filter: invert(100%) grayscale(100%) brightness(100%);
+}
+.react-tel-input .selected-flag .arrow {
+  filter: invert(100%) grayscale(100%) brightness(100%) !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important; /* For Firefox */
+  -webkit-appearance: none; /* For Safari and Chrome */
+  appearance: none; /* For other browsers */
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.video-container {
+  resize: both !important;
+  overflow: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: only light;
+    background: #000;
+    color: #fff;
+  }
+}
