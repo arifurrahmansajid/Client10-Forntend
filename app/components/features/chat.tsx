@@ -168,16 +168,21 @@ export default function Chat() {
   }, [setCurrentlyChattingWith]);
 
   useEffect(() => {
-    const chat = localStorage.getItem("chat") as string;
-    setChatingWith(friends);
-    if (chat === "private") {
+    const chatMode = localStorage.getItem("chat") as string;
+    
+    // Set chat mode on mount
+    if (chatMode === "private") {
       handleSetChatType("private");
-      setCurrentlyChattingWith(friends[friends.length - 1]);
+      // If we don't have anyone selected but we are in private mode, 
+      // we might want to keep the last selected person if they are in chatingWith
+      if (!currentlyChattingWith && chatingWith.length > 0) {
+        setCurrentlyChattingWith(chatingWith[chatingWith.length - 1]);
+      }
     } else {
       setCurrentlyChattingWith(null);
       handleSetChatType("public");
     }
-  }, [friends, setChatingWith, setCurrentlyChattingWith]);
+  }, []); // Only on mount to restore mode
 
   useEffect(() => {
     if (!currentlyChattingWith?._id) {
@@ -261,6 +266,19 @@ export default function Chat() {
       setMessage([]);
     });
     socket?.on("personal-message-to-user", (data: Message) => {
+      // Ensure the sender is in our active chat tabs
+      if (data.sentBy) {
+        setChatingWith((prev) => {
+          if (prev.find((u) => u._id === data.sentBy?._id)) return prev;
+          return [...prev, data.sentBy as UserType];
+        });
+        
+        // Optionally switch to this user if not already chatting with anyone or if we want to focus new messages
+        if (!currentlyChattingWith) {
+          setCurrentlyChattingWith(data.sentBy);
+          handleSetChatType("private");
+        }
+      }
       setMessage((prev) => [...prev, data]);
     });
     socket?.on("all-private-messages-delete", () => {
@@ -299,7 +317,7 @@ export default function Chat() {
       />
       <div className="h-[50vh] overflow-y-auto scroll-smooth w-full grow">
         {messages.map((message, idx) => {
-          if (message.roomId) return null;
+          if (!message || message.roomId) return null;
           return (
             <MessageCard
               message={message}

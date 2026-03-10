@@ -50,7 +50,7 @@ export const formatDate = (date: Date) => {
 };
 
 export const isAlreadyChatingWith = (user: UserType, users: UserType[]) => {
-  return users.find((u) => u._id === user._id);
+  return users.find((u) => u && u._id === user._id);
 };
 
 export const handleSetChatType = (type: string) => {

@@ -47,6 +47,7 @@ export default function UserTabs({ users }: { users: UserType[] }) {
       (e) => {
         const event = e as CustomEvent<UserType>;
         setFriends((prev) => {
+          if (prev.find((u) => u?._id === event.detail?._id)) return prev;
           return [...prev, event.detail];
         });
       },
@@ -77,7 +78,7 @@ export default function UserTabs({ users }: { users: UserType[] }) {
           method: "GET",
         });
         if (res?.friends) {
-          setFriends(res.friends.map((friend) => friend.friend));
+          setFriends(res.friends.map((friend) => friend.friend).filter(Boolean));
         }
       } else {
         const res = await query<{
@@ -90,7 +91,7 @@ export default function UserTabs({ users }: { users: UserType[] }) {
           },
         });
         if (res?.friends) {
-          setFriends(res.friends.map((friend) => friend.friend));
+          setFriends(res.friends.map((friend) => friend.friend).filter(Boolean));
         }
       }
     };
@@ -112,7 +113,7 @@ export default function UserTabs({ users }: { users: UserType[] }) {
           }}
           className="flex gap-x-1"
         >
-          Online <span>{Object.keys(onlineUsers).length}</span>
+          Online <span>{onlineUsers?.length || 0}</span>
         </Button>
         <Button
           onClick={() => {
@@ -134,7 +135,7 @@ export default function UserTabs({ users }: { users: UserType[] }) {
       </div>
       {tabs === "registered" && (
         <div className="w-full h-[calc(100vh_-_9.5rem)] overflow-y-auto">
-          {users.map((user) => (
+          {users.map((user) => user && (
             <UserCard key={user._id} user={user} />
           ))}
         </div>
@@ -154,7 +155,7 @@ export default function UserTabs({ users }: { users: UserType[] }) {
       )}
       {tabs === "friends" && (
         <div className="w-full h-[calc(100vh_-_9.5rem)] overflow-y-auto">
-          {friends.map((user) => (
+          {friends.map((user) => user && (
             <UserCard key={user._id} user={user} />
           ))}
         </div>

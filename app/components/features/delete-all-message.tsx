@@ -29,42 +29,26 @@ export default function DeleteAllMessages({
   const { deleteDisabled } = useDisable("/delete");
 
   const handleDeleteAllChat = async () => {
-    if (!chatingWith.length) {
-      const res = await mutation<{ message: string; isPrivate?: boolean }>({
-        url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/chat?isPrivate=`,
-        method: "DELETE",
-        headers: {
-          Authorization: getCookie("token=") || "",
-        },
-      });
-      if (res?.message) {
-        window.dispatchEvent(new Event("message-delete"));
+    const isPrivateMode = localStorage.getItem("chat") === "private";
+    const targetId = _currentlyChattingWith?._id;
+
+    // Send a single request targeting ONLY the current context
+    const res = await mutation<{ message: string; isPrivate?: boolean }>({
+      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/chat?isPrivate=${isPrivateMode ? "true" : ""}&chatingWith=${isPrivateMode && targetId ? targetId : ""}`,
+      method: "DELETE",
+      headers: {
+        Authorization: getCookie("token=") || "",
+      },
+    });
+
+    if (res?.message) {
+      if (res.isPrivate && _currentlyChattingWith) {
+        socket?.emit("private-messages-delete", _currentlyChattingWith.email);
+      } else {
         socket?.emit("messages-delete");
-        toast.success(res.message);
       }
-    }
-    for (let i = 0; i < chatingWith.length; i++) {
-      const user = chatingWith[i];
-      const res = await mutation<{ message: string; isPrivate?: boolean }>({
-        url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/chat?isPrivate=${
-          chatingWith ? "true" : ""
-        }`,
-        method: "DELETE",
-        headers: {
-          Authorization: getCookie("token=") || "",
-        },
-      });
-      if (res?.message) {
-        if (res.isPrivate) {
-          socket?.emit("private-messages-delete", user.email);
-          window.dispatchEvent(new Event("message-delete"));
-          toast.success(res.message);
-          return;
-        }
-        window.dispatchEvent(new Event("message-delete"));
-        socket?.emit("messages-delete");
-        toast.success(res.message);
-      }
+      window.dispatchEvent(new Event("message-delete"));
+      toast.success(res.message);
     }
   };
   const handleRemoveFriend = async (id: string) => {
@@ -137,7 +121,14 @@ export default function DeleteAllMessages({
                   onClick={() => {
                     handleDestroyPreviousConnections(true)
                       .then(() => {
-                        void handleRemoveFriend(user._id);
+                        // Just remove from active chat list, don't unfriend
+                        _setChatingWith((prev) => prev.filter((u) => u._id !== user._id));
+                        if (_currentlyChattingWith?._id === user._id) {
+                          setCurrentlyChattingWith(null);
+                          handleSetChatType("public");
+                          setCurrentPage(Page.chat);
+                          socket?.emit("join-room", "public");
+                        }
                       })
                       .catch(() => {});
                   }}

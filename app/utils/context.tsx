@@ -152,9 +152,9 @@ export default function GlobalState({
       void getUser();
     });
     socket?.on("user-deleted-all", (deletedUser: UserType) => {
-      setChatingWith((prev) => prev.filter((u) => u._id !== deletedUser._id));
+      setChatingWith((prev) => prev.filter((u) => u && deletedUser && u._id !== deletedUser._id));
       setCurrentlyChattingWith((prev) =>
-        prev?._id === deletedUser._id ? null : prev
+        prev?._id === deletedUser?._id ? null : prev
       );
     });
     return () => {
@@ -166,40 +166,49 @@ export default function GlobalState({
   }, [token, socket]);
 
   useEffect(() => {
-    setSocket(
-      io(process.env.NEXT_PUBLIC_BACKEND_URL, {
-        reconnection: true, // important!
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 1000,
-        autoConnect: true,
-      })
-    );
+    const newSocket = io(process.env.NEXT_PUBLIC_BACKEND_URL, {
+      reconnection: true, // important!
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      autoConnect: true,
+    });
+    setSocket(newSocket);
+
     return () => {
-      socket?.emit("user-disconnected", { ud: user?._id, socketId: socket.id });
-      socket?.disconnect();
+      newSocket.emit("user-disconnected", { socketId: newSocket.id });
+      newSocket.disconnect();
     };
   }, []);
 
   useEffect(() => {
     if (socket && user) {
-      socket.on("connect", () => {
+      const handleConnect = () => {
         socket.emit("connected", user);
-      });
+      };
+      
+      socket.on("connect", handleConnect);
+      
+      // If already connected when this runs, emit immediately
+      if (socket.connected) {
+        handleConnect();
+      }
+
+      const abort = new AbortController();
+      window.addEventListener(
+        "beforeunload",
+        () => {
+          socket?.emit("user-disconnected", {
+            id: user?._id,
+            socketId: socket?.id,
+          });
+        },
+        abort
+      );
+      return () => {
+        socket.off("connect", handleConnect);
+        abort.abort();
+      };
     }
-    const abort = new AbortController();
-    window.addEventListener(
-      "beforeunload",
-      () => {
-        socket?.emit("user-disconnected", {
-          id: user?._id,
-          socketId: socket?.id,
-        });
-      },
-      abort
-    );
-    return () => {
-      abort.abort();
-    };
   }, [socket, user]);
 
   return (
