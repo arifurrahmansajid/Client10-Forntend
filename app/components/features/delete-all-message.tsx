@@ -101,15 +101,15 @@ export default function DeleteAllMessages({
       </Button>
       {chatingWith.length && currentUser ? (
         <>
-          {chatingWith.map((user) => {
+          {chatingWith.map((user, idx) => {
             if (!user?.name) return;
             return (
               <div
-                key={user._id}
+                key={`${user._id}-${idx}`}
                 className="flex items-center gap-x-1 p-2 self-center shrink-0 flex-nowrap"
               >
                 <Button
-                  key={user._id}
+                  key={`btn-${user._id}-${idx}`}
                   onClick={() => {
                     setCurrentlyChattingWith(user);
                     handleSetChatType("private");
