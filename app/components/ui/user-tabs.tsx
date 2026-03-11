@@ -135,17 +135,17 @@ export default function UserTabs({ users }: { users: UserType[] }) {
       </div>
       {tabs === "registered" && (
         <div className="w-full h-[calc(100vh_-_9.5rem)] overflow-y-auto">
-          {users.map((user) => user && (
-            <UserCard key={user._id} user={user} />
+          {users.map((user, idx) => user && (
+            <UserCard key={`${user._id}-${idx}`} user={user} />
           ))}
         </div>
       )}
       {tabs === "online" && (
         <div className="w-full h-[calc(100vh_-_9.5rem)] overflow-y-auto">
-          {onlineUsers.map((user) => {
+          {onlineUsers.map((user, idx) => {
             return (
               <UserCard
-                key={user?._id ?? user?.socketID}
+                key={`${user?._id ?? user?.socketID}-${idx}`}
                 user={user}
                 _admin={currentUser}
               />
@@ -155,8 +155,8 @@ export default function UserTabs({ users }: { users: UserType[] }) {
       )}
       {tabs === "friends" && (
         <div className="w-full h-[calc(100vh_-_9.5rem)] overflow-y-auto">
-          {friends.map((user) => user && (
-            <UserCard key={user._id} user={user} />
+          {friends.map((user, idx) => user && (
+            <UserCard key={`${user._id}-${idx}`} user={user} />
           ))}
         </div>
       )}

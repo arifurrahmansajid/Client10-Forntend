@@ -121,8 +121,9 @@ export default function DeleteAllMessages({
                   onClick={() => {
                     handleDestroyPreviousConnections(true)
                       .then(() => {
-                        // Just remove from active chat list, don't unfriend
-                        _setChatingWith((prev) => prev.filter((u) => u._id !== user._id));
+                        // User wants to keep tabs visible even after closing chats.
+                        // So we NO LONGER remove them from `chatingWith`. 
+                        // We just deselect them if they were currently selected.
                         if (_currentlyChattingWith?._id === user._id) {
                           setCurrentlyChattingWith(null);
                           handleSetChatType("public");
@@ -130,7 +131,7 @@ export default function DeleteAllMessages({
                           socket?.emit("join-room", "public");
                         }
                       })
-                      .catch(() => {});
+                      .catch(() => { });
                   }}
                 >
                   X
