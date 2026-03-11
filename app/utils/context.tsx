@@ -107,9 +107,7 @@ export default function GlobalState({
   }, [currentPage]);
 
   useEffect(() => {
-    if (token) {
-      setBackgroundType("private");
-    } else {
+    if (!token) {
       setBackgroundType("public");
     }
   }, [token]);
@@ -117,24 +115,29 @@ export default function GlobalState({
   useEffect(() => {
     if (token && user) return;
     const getUser = async () => {
-      const user = await query<{ user: UserType | null }>({
+      const resp = await query<{ user: UserType | null }>({
         url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/users/private-profile`,
         method: "GET",
         headers: {
           Authorization: token || "",
         },
       });
-      if (user?.user) {
+      if (resp?.user) {
         setUser({
-          ...user.user,
+          ...resp.user,
         });
+        if (resp.user.backgroundType) {
+          setBackgroundType(resp.user.backgroundType);
+        } else {
+          setBackgroundType("public");
+        }
         socket?.emit("connected", {
-          ...user.user,
+          ...resp.user,
           socketID: socket?.id,
         });
       } else {
         socket?.emit("connected", {
-          ...user?.user,
+          ...resp?.user,
           socketID: socket?.id,
         });
       }

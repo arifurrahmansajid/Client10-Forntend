@@ -22,6 +22,7 @@ export interface UserType {
   countryCode: string | null | undefined;
   ip: string | null | undefined;
   relationShip: string | null | undefined;
+  backgroundType: string | null | undefined;
 }
 
 export interface Query {
