@@ -52,6 +52,7 @@ export default function Profile() {
       setUserDetails(res.updatedUser);
       setUser(res.updatedUser);
       socket?.emit("connected", { ...res.updatedUser, socketID: socket.id });
+      socket?.emit("user-updated", { ...res.updatedUser, socketID: socket.id });
     }
   };
 
