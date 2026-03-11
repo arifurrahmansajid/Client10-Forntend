@@ -46,27 +46,27 @@ export default function Chat() {
     roomId?: string
   ) => {
     e?.preventDefault();
-    
+
     // Prevent multiple submissions
     if (isSendingRef.current) {
       return;
     }
-    
+
     const formData = new FormData(e?.currentTarget);
     const message = formData.get("message") as string;
     if (!message && !previews.length) return;
-    
+
     // Set sending state
     setIsSending(true);
     isSendingRef.current = true;
-    
+
     try {
       const res = await mutation<{ chat: Message; user: UserType | null }>({
-      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/chat`,
-      method: "POST",
-      headers: {
-        Authorization: getCookie("token=") || "",
-      },
+        url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/chat`,
+        method: "POST",
+        headers: {
+          Authorization: getCookie("token=") || "",
+        },
         body: JSON.stringify({
           message: roomId || message,
           sentTo: currentlyChattingWith?._id,
@@ -169,7 +169,7 @@ export default function Chat() {
 
   useEffect(() => {
     const chatMode = localStorage.getItem("chat") as string;
-    
+
     // Set chat mode on mount
     if (chatMode === "private") {
       handleSetChatType("private");
@@ -212,7 +212,7 @@ export default function Chat() {
               rootElement.style.borderRadius = "0";
               rootElement.style.setProperty("border-radius", "0", "important");
             }
-            
+
             // Also inject a style tag into shadow root to override all border-radius
             let styleTag = shadowRoot.querySelector("style#custom-border-radius") as HTMLStyleElement;
             if (!styleTag) {
@@ -272,14 +272,16 @@ export default function Chat() {
           if (prev.find((u) => u._id === data.sentBy?._id)) return prev;
           return [...prev, data.sentBy as UserType];
         });
-        
+
         // Optionally switch to this user if not already chatting with anyone or if we want to focus new messages
         if (!currentlyChattingWith) {
           setCurrentlyChattingWith(data.sentBy);
           handleSetChatType("private");
+          setMessage((prev) => [...prev, data]);
+        } else if (currentlyChattingWith._id === data.sentBy._id || currentlyChattingWith._id === data.user?._id) {
+          setMessage((prev) => [...prev, data]);
         }
       }
-      setMessage((prev) => [...prev, data]);
     });
     socket?.on("all-private-messages-delete", () => {
       setMessage([]);
@@ -294,7 +296,7 @@ export default function Chat() {
         });
       });
     });
-    socket?.on("removefriend", () => {});
+    socket?.on("removefriend", () => { });
 
     return () => {
       socket?.off("message-to-all");
@@ -303,7 +305,7 @@ export default function Chat() {
       socket?.off("all-private-messages-delete");
       socket?.off("message-update-all");
     };
-  }, [socket]);
+  }, [socket, currentlyChattingWith, setChatingWith, setCurrentlyChattingWith]);
 
   const filesWithoutURL = previews.find((file) => !file.url);
 
