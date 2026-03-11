@@ -305,7 +305,7 @@ export default function Chat() {
       socket?.off("all-private-messages-delete");
       socket?.off("message-update-all");
     };
-  }, [socket, currentlyChattingWith, setChatingWith, setCurrentlyChattingWith]);
+  }, [socket, currentlyChattingWith?._id, setChatingWith, setCurrentlyChattingWith]);
 
   const filesWithoutURL = previews.find((file) => !file.url);
 
