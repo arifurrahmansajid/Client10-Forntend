@@ -131,7 +131,7 @@ export default function Room({
 
   const handlePeerExists = useCallback(
     (socketId: string) => {
-      return peerConnections.current.find((peer) => peer.socketId === socketId);
+      return peerConnections.current?.find((peer) => peer.socketId === socketId);
     },
     [peerConnections]
   );
