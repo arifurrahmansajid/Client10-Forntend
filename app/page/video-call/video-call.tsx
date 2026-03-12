@@ -510,6 +510,7 @@ export default function Room({
             width={48}
             height={48}
             alt="Invite User"
+            priority
           />
         </Button>
         <Button onClick={handleTurnOnCamera}>

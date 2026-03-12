@@ -110,7 +110,7 @@ export default function UserCard({
               src={user?.profilePic}
               alt={user.name}
               fill
-              style={{ objectFit: "contain" }}
+              className="object-contain"
               unoptimized
             />
           ) : (
@@ -118,7 +118,7 @@ export default function UserCard({
               src={defaultProfilePic}
               alt={user.name}
               fill
-              style={{ objectFit: "contain" }}
+              className="object-contain"
               unoptimized
             />
           )}

@@ -133,7 +133,7 @@ export default function MessageCard({
                 fill
                 src={message.user?.profilePic}
                 alt={message.message}
-                objectFit="contain"
+                className="object-contain"
                 unoptimized
               />
             </div>
@@ -148,7 +148,7 @@ export default function MessageCard({
                 fill
                 src={defaultProfilePic}
                 alt={message.message}
-                style={{ objectFit: "cover" }}
+                className="object-cover"
                 unoptimized
               />
             </div>

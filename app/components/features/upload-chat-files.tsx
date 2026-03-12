@@ -163,7 +163,7 @@ export default function UploadChatFiles({
                 }}
                 disabled={!file.url}
               >
-                <Image src="/icons/cancel.png" fill alt="" objectFit="cover" />
+                <Image src="/icons/cancel.png" fill alt="" className="object-cover" />
               </Button>
             </div>
           </article>

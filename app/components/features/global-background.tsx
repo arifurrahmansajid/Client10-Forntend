@@ -268,8 +268,8 @@ export default function GlobalbackGround() {
       >
         <Image
           src={backgrundStyle.url}
-          layout="fill"
-          objectFit="contain"
+          fill
+          className="object-contain"
           alt=""
           unoptimized
         />
@@ -288,8 +288,8 @@ export default function GlobalbackGround() {
       >
         <Image
           src={backgrundStyle.url}
-          layout="fill"
-          objectFit="fill"
+          fill
+          className="object-fill"
           alt=""
           unoptimized
         />
