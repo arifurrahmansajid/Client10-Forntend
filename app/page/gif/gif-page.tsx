@@ -2,7 +2,7 @@ import TabsContent, { Tabs } from "@/app/components/ui/tabs";
 import React, { Suspense } from "react";
 import Upload from "@/app/components/features/upload";
 import GifContainer from "./component/gif-container";
-import DeletePublicGIF from "./component/delete-pubic";
+import DeleteGIFs from "./component/delete-gifs";
 import DisbaleFeature from "@/app/components/features/disable-feature";
 
 export default function GIF() {
@@ -13,7 +13,7 @@ export default function GIF() {
         position="end"
         defaultValue="Public"
       >
-        <DeletePublicGIF />
+        <DeleteGIFs />
         <DisbaleFeature path="/bg" />
         <DisbaleFeature path="/upload" />
         <DisbaleFeature path="/delete" />

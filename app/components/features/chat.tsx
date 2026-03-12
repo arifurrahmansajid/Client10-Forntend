@@ -31,12 +31,14 @@ export default function Chat() {
   const textAreaRef = useRef<null | HTMLTextAreaElement>(null);
   const inputRef = useRef<null | HTMLInputElement>(null);
   const socket = useSocket();
+  const [UserName, setUserName] = useState("User");
   const {
     friends,
     chatingWith,
     setChatingWith,
     currentlyChattingWith,
     setCurrentlyChattingWith,
+    user,
   } = useContext(Context);
   const { room, setRoom } = useVideoCall();
   const { chatDisabled } = useDisable("/chat");
@@ -72,6 +74,7 @@ export default function Chat() {
           sentTo: currentlyChattingWith?._id,
           files: previews.map((file) => file.url),
           token: getCookie("token="),
+          name: user ? user.name : UserName,
         }),
       });
       if (res?.chat) {
@@ -103,6 +106,7 @@ export default function Chat() {
           ...res.chat,
           sentBy: res.user,
           user: res.user,
+          name: res.chat.name || res.user?.name || "User",
         });
       }
     } finally {

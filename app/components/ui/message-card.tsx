@@ -163,7 +163,7 @@ export default function MessageCard({
               !message.user?._id || !user?._id || user._id === message.user._id
             }
           >
-            {message.user?.name || "User"}
+            {message.user?.name || message.name || "User"}
           </Button>
         </div>
         <div className="border-2 p-2 w-fit">

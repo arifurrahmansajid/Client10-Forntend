@@ -32,7 +32,6 @@ export default function DeleteChat({
   };
   return (
     <Button
-      disabled={!user || user._id !== message.user?._id}
       onClick={() => {
         void handleDelete();
       }}

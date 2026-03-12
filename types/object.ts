@@ -78,6 +78,7 @@ export interface Message {
   _id: string;
   files: string[];
   roomId?: string;
+  name?: string;
 }
 
 export interface DisableButton {

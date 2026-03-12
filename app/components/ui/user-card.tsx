@@ -154,9 +154,9 @@ export default function UserCard({
             {user.race}
           </Button>
           {currentUser?.roles.includes("admin") &&
-            user._id !== currentUser._id && (
+            user._id !== currentUser?._id && (
               <Button
-                className="ml-2 !bg-red-600 hover:!bg-red-700"
+                className="ml-2 !bg-red-600 hover:!bg-red-700 text-xs px-2"
                 onClick={() => {
                   void handleAdminDeleteUser();
                 }}

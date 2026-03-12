@@ -142,21 +142,19 @@ export default function GIFCard({
             >
               Background
             </Button>
-            {showOptionalButton && (
-              <Button
-                className="cursor-pointer"
-                onClick={(e) => {
-                  if (deleteDisabled && currentTab === "public") {
-                    e.preventDefault();
-                    return;
-                  }
-                  void handleDelete();
-                }}
-                disabled={deleteDisabled && currentTab === "public"}
-              >
-                Delete
-              </Button>
-            )}
+            <Button
+              className="cursor-pointer"
+              onClick={(e) => {
+                if (deleteDisabled && currentTab === "public" && user?.roles !== "admin") {
+                  e.preventDefault();
+                  return;
+                }
+                void handleDelete();
+              }}
+              disabled={deleteDisabled && currentTab === "public" && user?.roles !== "admin"}
+            >
+              Delete
+            </Button>
           </>
         )}
       </div>

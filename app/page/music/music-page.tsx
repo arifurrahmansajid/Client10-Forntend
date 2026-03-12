@@ -1,7 +1,7 @@
 import TabsContent, { Tabs } from "@/app/components/ui/tabs";
 import React, { Suspense } from "react";
 import Upload from "@/app/components/features/upload";
-import DeletePublicAudio from "./component/delete-pubic-music";
+import DeleteMusic from "./component/delete-music";
 import MusicContainer from "./component/music-container";
 import DisbaleFeature from "@/app/components/features/disable-feature";
 
@@ -13,7 +13,7 @@ export default function Music() {
         position="end"
         defaultValue="Public"
       >
-        <DeletePublicAudio />
+        <DeleteMusic />
         <DisbaleFeature path="/music" />
         <DisbaleFeature path="/upload" />
         <DisbaleFeature path="/delete" />

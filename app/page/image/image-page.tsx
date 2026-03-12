@@ -2,7 +2,7 @@ import TabsContent, { Tabs } from "@/app/components/ui/tabs";
 import React, { Suspense } from "react";
 import Upload from "@/app/components/features/upload";
 import ImageContainer from "./component/image-container";
-import DeletePublicImages from "./component/delete-public";
+import DeleteImages from "./component/delete-images";
 import DisbaleFeature from "@/app/components/features/disable-feature";
 
 export default function ImagePage() {
@@ -13,7 +13,7 @@ export default function ImagePage() {
         position="end"
         defaultValue="Public"
       >
-        <DeletePublicImages />
+        <DeleteImages />
         <DisbaleFeature path="/bg" />
         <DisbaleFeature path="/upload" />
         <DisbaleFeature path="/delete" />

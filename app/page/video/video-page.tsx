@@ -2,7 +2,7 @@ import TabsContent, { Tabs } from "@/app/components/ui/tabs";
 import React, { Suspense } from "react";
 import Upload from "@/app/components/features/upload";
 import VideoContainer from "./component/video-container";
-import DeletePublic from "./component/delete-public";
+import DeleteVideos from "./component/delete-videos";
 import DisbaleFeature from "@/app/components/features/disable-feature";
 
 export default function Video() {
@@ -13,7 +13,7 @@ export default function Video() {
         position="end"
         defaultValue="Public"
       >
-        <DeletePublic />
+        <DeleteVideos />
         <DisbaleFeature path="/bg" />
         <DisbaleFeature path="/upload" />
         <DisbaleFeature path="/delete" />

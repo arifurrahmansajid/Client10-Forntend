@@ -25,6 +25,7 @@ export default function MusicCard({
   const mutation = useMutation();
   const {
     setBackgroundMusic,
+    user,
     currentPage,
     token,
     currentTab,
@@ -104,20 +105,18 @@ export default function MusicCard({
             >
               Background
             </Button>
-            {showOptionalButton && (
-              <Button
-                onClick={(e) => {
-                  if (deleteDisabled && currentTab === "public") {
-                    e.preventDefault();
-                    return;
-                  }
-                  void handleDelete();
-                }}
-                disabled={deleteDisabled && currentTab === "public"}
-              >
-                Delete
-              </Button>
-            )}
+            <Button
+              onClick={(e) => {
+                if (deleteDisabled && currentTab === "public" && user?.roles !== "admin") {
+                  e.preventDefault();
+                  return;
+                }
+                void handleDelete();
+              }}
+              disabled={deleteDisabled && currentTab === "public" && user?.roles !== "admin"}
+            >
+              Delete
+            </Button>
           </>
         )}
       </div>
