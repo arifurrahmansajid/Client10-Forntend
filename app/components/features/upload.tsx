@@ -367,9 +367,6 @@
 //   );
 // }
 
-
-
-
 "use client";
 import { getCookie } from "@/app/utils/utils";
 import Image from "next/image";
@@ -396,9 +393,6 @@ interface UploadProps extends ComponentProps<"input"> {
   showXbutton?: boolean;
 }
 
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
-const CONCURRENT_UPLOADS = 3;
-
 export default function Upload({
   text,
   url,
@@ -419,6 +413,7 @@ export default function Upload({
       size: number;
       duration?: number;
       progress: number;
+      xhr?: XMLHttpRequest;
       aborted?: boolean;
       url?: string;
       id: number;
@@ -442,286 +437,293 @@ export default function Upload({
     ]);
   }, []);
 
-  const uploadFileInChunks = async (fileObj: { file: File; id: number }) => {
-    const file = fileObj.file;
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const token = getCookie("token=") || "";
-
-    try {
-      if (url) {
-        // ===================== SINGLE FILE UPLOAD (REAL PROGRESS) =====================
-        const formData = new FormData();
-        formData.append("files", file);
-
-        const xhr = new XMLHttpRequest();
-
-        // Progress tracking
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 100);
-            setFilePreview((prev) =>
-              prev.map((p) =>
-                p.id === fileObj.id ? { ...p, progress: percent } : p
-              )
-            );
-          }
-        };
-
-        // Success
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const resData = JSON.parse(xhr.responseText);
-
-            setFilePreview((prev) =>
-              prev.map((p) =>
-                p.id === fileObj.id
-                  ? { ...p, progress: 100, url: resData.url ? resData.url[0] : undefined }
-                  : p
-              )
-            );
-
-            socket?.emit("new-file-uploaded");
-            if (cb) cb();
-            if (!showAddMoreFile) {
-              setFilePreview([]);
-              setFiles([]);
-            }
-            toast.success(`${file.name} uploaded successfully`);
-          } else {
-            throw new Error(`Upload failed: ${xhr.statusText}`);
-          }
-        };
-
-        // Error
-        xhr.onerror = () => {
-          toast.error(`Error uploading ${file.name}`);
-          setFilePreview((prev) =>
-            prev.map((p) => (p.id === fileObj.id ? { ...p, aborted: true } : p))
-          );
-        };
-
-        xhr.open(method || "POST", url, true);
-
-        if (!publicUpload) {
-          xhr.setRequestHeader("Authorization", token);
-        }
-
-        xhr.send(formData);
+  const handleUploadFile = useCallback(() => {
+    if (!files || !url || !method) return;
+    for (let i = 0; i < files.length; i++) {
+      const formData = new FormData();
+      const file = files?.[i];
+      void handleGetPreview(file);
+      if (file) formData.append("files", file.file);
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, url);
+      if (!publicUpload) {
+        xhr.setRequestHeader("Authorization", getCookie("token=") || "");
       } else {
-        // ===================== CHUNKED UPLOAD (আগের মতোই) =====================
-        const initRes = await fetch(`${backendUrl}/upload/init`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: publicUpload ? "" : token,
-          },
-          body: JSON.stringify({ fileName: file.name, totalChunks }),
-        });
-
-        if (!initRes.ok) throw new Error("Failed to initialize upload");
-        const { uploadId } = await initRes.json();
-
-        const chunkProgress = new Array(totalChunks).fill(0);
-        const updateOverallProgress = () => {
-          const totalUploaded = chunkProgress.reduce((a, b) => a + b, 0);
-          const percent = Math.round((totalUploaded / file.size) * 100);
-          setFilePreview((prev) =>
-            prev.map((p) => (p.id === fileObj.id ? { ...p, progress: percent } : p))
-          );
-        };
-
-        const uploadChunk = async (index: number) => {
-          const start = index * CHUNK_SIZE;
-          const end = Math.min(start + CHUNK_SIZE, file.size);
-          const chunk = file.slice(start, end);
-          const formData = new FormData();
-          formData.append("chunk", chunk);
-          formData.append("uploadId", uploadId);
-          formData.append("chunkIndex", index.toString());
-
-          const res = await fetch(`${backendUrl}/upload/chunk`, {
-            method: "POST",
-            headers: { Authorization: publicUpload ? "" : token },
-            body: formData,
-          });
-
-          if (!res.ok) throw new Error(`Failed to upload chunk ${index}`);
-          chunkProgress[index] = end - start;
-          updateOverallProgress();
-        };
-
-        const queue = Array.from({ length: totalChunks }, (_, i) => i);
-        const workers = Array.from({ length: Math.min(totalChunks, CONCURRENT_UPLOADS) }, async () => {
-          while (queue.length > 0) {
-            const index = queue.shift()!;
-            await uploadChunk(index);
-          }
-        });
-        await Promise.all(workers);
-
-        // Complete
-        const fileType = rest.accept?.split("/")[0] || "file";
-        const completeRes = await fetch(`${backendUrl}/upload/complete`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: publicUpload ? "" : token,
-          },
-          body: JSON.stringify({ uploadId, fileName: file.name, totalChunks, fileType }),
-        });
-
-        if (!completeRes.ok) throw new Error("Failed to complete upload");
-        const resData = await completeRes.json();
-
+        xhr.setRequestHeader("Authorization", "");
+      }
+      xhr.upload.onprogress = (e) => {
+        const percent = Math.round((e.loaded / e.total) * 100);
         setFilePreview((prev) =>
-          prev.map((p) =>
-            p.id === fileObj.id ? { ...p, progress: 100, url: resData.url[0] } : p
+          prev.map((preview) =>
+            preview.id === file.id && preview.name === file.file.name
+              ? { ...preview, progress: percent, xhr, aborted: false }
+              : preview
           )
         );
-      }
-
-      // Common success for chunked upload
-      if (!url) {
-        socket?.emit("new-file-uploaded");
-        if (cb) cb();
-        if (!showAddMoreFile) {
-          setFilePreview([]);
-          setFiles([]);
+      };
+      xhr.send(formData);
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const res = JSON.parse(xhr.response as string) as { url: string[] };
+          setFilePreview((prev) =>
+            prev.map((preview) =>
+              preview.id === file.id && preview.name === file.file.name
+                ? { ...preview, progress: 100, aborted: false, url: res.url[0] }
+                : preview
+            )
+          );
+          socket?.emit("new-file-uploaded");
+          if (cb) {
+            cb();
+          }
+          if (!showAddMoreFile) {
+            setFilePreview([]);
+            setFiles([]);
+          }
+          toast.success(`${file.file.name} upload successfully`);
         }
-        toast.success(`${file.name} uploaded successfully`);
-      }
-    } catch (error: any) {
-      console.error(error);
-      toast.error(`Error uploading ${file.name}: ${error.message}`);
-      setFilePreview((prev) =>
-        prev.map((p) => (p.id === fileObj.id ? { ...p, aborted: true } : p))
-      );
-    }
-  };
+      };
 
-  const handleUploadFile = useCallback(() => {
-    if (!files.length) return;
-    files.forEach((file) => {
-      void handleGetPreview(file);
-      void uploadFileInChunks(file);
-    });
-    setFiles([]);
-  }, [files, handleGetPreview, publicUpload, socket, cb, showAddMoreFile, rest.accept]);
+      xhr.addEventListener("abort", () => {
+        setFilePreview((prev) =>
+          prev.map((preview) =>
+            preview.id === file.id && preview.name === file.file.name
+              ? { ...preview, aborted: true }
+              : preview
+          )
+        );
+      });
+    }
+  }, [
+    files,
+    url,
+    method,
+    handleGetPreview,
+    publicUpload,
+    socket,
+    showAddMoreFile,
+  ]);
 
   const handleDeleteFile = async (url?: string) => {
     if (!url) return;
     const res = await mutation<{ message: string }>({
-      url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/chat/files/${encodeURIComponent(url)}`,
+      url: `${
+        process.env.NEXT_PUBLIC_BACKEND_URL
+      }/chat/files/${encodeURIComponent(url)}`,
       method: "DELETE",
     });
     if (res?.message) {
       setFilePreview((prev) => prev.filter((prevFile) => prevFile.url !== url));
-      if (cb) cb();
+      if (cb) {
+        cb();
+      }
       socket?.emit("new-file-uploaded");
       toast.success(res.message);
     }
   };
 
   useEffect(() => {
-    if (files.length > 0) {
-      void handleUploadFile();
-    }
-  }, [files, handleUploadFile]);
+    void handleUploadFile();
+  }, [handleUploadFile]);
 
   useEffect(() => {
     return () => {
-      filePreview.forEach((file) => URL.revokeObjectURL(file.preview));
+      filePreview.forEach((file) => {
+        URL.revokeObjectURL(file.preview);
+      });
     };
   }, [filePreview]);
-
   return (
     <>
-      <div className={`border border-white p-6 w-full overflow-y-auto max-h-[80vh] ${className}`}>
+      <div
+        className={`border border-white p-6 w-full overflow-y-auto max-h-[80vh] ${className}`}
+      >
         {filePreview.length ? null : (
           <Button
             className="w-full h-full cursor-pointer"
-            onClick={() => inputRef.current?.click()}
+            onClick={() => {
+              inputRef.current?.click();
+            }}
             disabled={uploadDisabled}
           >
             {text}
           </Button>
         )}
-
         {filePreview.map((file) => {
-          const accept = (rest.accept || "").toLowerCase();
-          const isImage = accept.includes("image") || [".jpg", ".jpeg", ".png", ".svg", ".webp"].some((ext) => accept.includes(ext));
-          const isVideo = accept.includes("video");
-          const isAudio = accept.includes("audio");
-
-          return (
-            <div key={file.id} className="flex items-center justify-between my-3 w-full">
-              <div className="flex items-center gap-4 flex-1 overflow-hidden">
-                {isVideo ? (
-                  <video src={file.preview} className="w-14 h-14 object-cover bg-black flex-shrink-0" muted />
-                ) : isImage ? (
-                  <div className="relative w-14 h-14 bg-black flex items-center justify-center flex-shrink-0">
-                    <Image src={file.preview} fill alt="preview" className="object-contain" unoptimized />
-                  </div>
-                ) : (
-                  <div className="w-14 h-14 bg-black flex items-center justify-center border border-white/10 flex-shrink-0">
-                    <span className="text-[10px] font-bold text-center px-1 break-all uppercase">
-                      {file.name.split(".").pop()}
-                    </span>
-                  </div>
-                )}
-
-                <span className="text-[15px] text-white whitespace-nowrap overflow-hidden text-ellipsis">
+          if (
+            rest.accept?.includes(".jpg") ||
+            rest.accept?.includes(".jpeg") ||
+            rest.accept?.includes(".png") ||
+            rest.accept?.includes(".svg") ||
+            rest.accept?.includes(".webp")
+          ) {
+            return (
+              <p
+                key={file.name}
+                className="flex items-center justify-between my-1 w-full"
+              >
+                <Image
+                  src={file.preview}
+                  width={100}
+                  height={100}
+                  alt="image"
+                  unoptimized
+                />{" "}
+                <span className="lg:text-base text-[12px] inline-block w-[120px] lg:w-auto break-all">
                   {file.name}
                 </span>
-              </div>
-
-              <div className="flex items-center gap-3 ml-4 flex-shrink-0">
-                <div className="flex items-center gap-2 w-[180px]">
-                  <div className="flex-1 h-3 bg-[#f0f0f0] relative">
-                    <div
-                      className="absolute left-0 top-0 h-full bg-[#1e90ff] transition-all duration-300"
-                      style={{ width: `${file.progress}%` }}
-                    />
-                  </div>
-                  <span className="text-sm text-white min-w-[35px] text-right">
-                    {file.progress}%
-                  </span>
-                </div>
-
-                {showXbutton && (
+                <span className="overflow-hidden w-fit flex gap-x-1 items-center">
+                  <progress value={file.progress} max={"100"} />{" "}
+                  <span className="inline-block w-12">{file.progress}%</span>
                   <Button
-                    onClick={() => void handleDeleteFile(file.url)}
+                    onClick={() => {
+                      void handleDeleteFile(file.url);
+                    }}
                     disabled={!file.url}
-                    className="p-1 hover:bg-white/10 bg-transparent text-white border-transparent"
+                    className="flex items-center justify-center w-8 h-8 relative ml-1"
                   >
                     <Image
                       src="/icons/cancel.png"
-                      width={18}
-                      height={18}
-                      alt="cancel"
-                      className="invert opacity-90"
+                      fill
+                      alt=""
+                      objectFit="cover"
                     />
                   </Button>
-                )}
-              </div>
-            </div>
-          );
+                </span>
+              </p>
+            );
+          }
+          if (rest.accept?.includes("video")) {
+            return (
+              <p
+                key={file.name}
+                className="flex items-center justify-between my-1 w-full"
+              >
+                <video
+                  key={file.name}
+                  src={file.preview}
+                  className="w-[100px] h-[100px]"
+                  autoPlay
+                />
+                <span className="lg:text-base text-[12px] inline-block w-[120px] lg:w-auto break-all">
+                  {file.name}
+                </span>
+                <span className="overflow-hidden w-fit flex gap-x-2 items-center">
+                  <progress value={file.progress} max={"100"} />{" "}
+                  <span className="inline-block w-12">{file.progress}%</span>
+                  <Button
+                    onClick={() => {
+                      void handleDeleteFile(file.url);
+                    }}
+                    disabled={!file.url}
+                    className="flex items-center justify-center w-8 h-8 relative ml-1"
+                  >
+                    <Image
+                      src="/icons/cancel.png"
+                      fill
+                      alt=""
+                      objectFit="cover"
+                    />
+                  </Button>
+                </span>
+              </p>
+            );
+          }
+          if (rest.accept?.includes("gif")) {
+            return (
+              <p
+                key={file.name}
+                className="flex items-center justify-between my-1 w-full"
+              >
+                <Image
+                  src={file.preview}
+                  width={100}
+                  height={100}
+                  alt="image"
+                  unoptimized
+                />{" "}
+                <span className="lg:text-base text-[12px] inline-block w-[120px] lg:w-auto break-all">
+                  {file.name}
+                </span>
+                <span className="overflow-hidden w-fit flex gap-x-2 items-center">
+                  <progress value={file.progress} max={"100"} />{" "}
+                  <span className="inline-block w-12">{file.progress}%</span>
+                  <Button
+                    onClick={() => {
+                      void handleDeleteFile(file.url);
+                    }}
+                    disabled={!file.url}
+                    className="flex items-center justify-center w-8 h-8 relative ml-1"
+                  >
+                    <Image
+                      src="/icons/cancel.png"
+                      fill
+                      alt=""
+                      objectFit="cover"
+                    />
+                  </Button>
+                </span>
+              </p>
+            );
+          }
+          if (rest.accept?.includes("audio")) {
+            return (
+              <p
+                key={file.name}
+                className={`flex items-center justify-between my-1 w-full ${
+                  !showXbutton
+                    ? "flex-col gap-y-3 justify-center items-center"
+                    : ""
+                } `}
+              >
+                <>
+                  <span className="lg:text-base text-[12px] inline-block w-[120px] lg:w-auto break-all">
+                    {file.name}
+                  </span>
+                  {file.aborted && "(cancelled)"}
+                </>
+                <span className="overflow-hidden w-fit flex gap-x-2 items-center">
+                  <progress value={file.progress} max={"100"} />{" "}
+                  <span className="inline-block w-12">{file.progress}%</span>
+                  {showXbutton && (
+                    <Button
+                      onClick={() => {
+                        void handleDeleteFile(file.url);
+                      }}
+                      disabled={!file.url}
+                      className="flex items-center justify-center w-8 h-8 relative ml-1"
+                    >
+                      <Image
+                        src="/icons/cancel.png"
+                        fill
+                        alt=""
+                        objectFit="cover"
+                      />
+                    </Button>
+                  )}
+                </span>
+              </p>
+            );
+          }
         })}
-
         <input
           type="file"
           className="hidden"
           ref={inputRef}
           {...rest}
+          onClick={(e) => {
+            e.currentTarget.value = "";
+            setFiles([]);
+          }}
           onChange={(e) => {
-            const selectedFiles = Array.from(e.target.files || []);
-            setFiles(selectedFiles.map((file) => ({ file, id: Date.now() + Math.random() })));
-            e.target.value = "";
+            Array.from(e.target.files || []).forEach((file) => {
+              setFiles((prev) => {
+                return [...prev, { file, id: Date.now() }];
+              });
+            });
           }}
         />
       </div>
-
       {filePreview.length && showAddMoreFile ? (
         <div className="mt-3">
           <Button onClick={() => inputRef.current?.click()}>Add File</Button>
