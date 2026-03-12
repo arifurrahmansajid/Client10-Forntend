@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { UserType, UserWithSocketID } from "@/types/object";
 import { useQuery } from "@/hooks/useQuery";
 import { getCookie } from "./utils";
@@ -98,7 +98,23 @@ export default function GlobalState({
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [currentlyChattingWith, setCurrentlyChattingWith] =
     useState<UserType | null>(null);
-  const [backgroundType, setBackgroundType] = useState("");
+  const [backgroundType, setBackgroundTypeState] = useState(
+    (typeof window !== "undefined" && localStorage.getItem("backgroundType")) ||
+      "public"
+  );
+
+  const setBackgroundType = useCallback(
+    (type: React.SetStateAction<string>) => {
+      setBackgroundTypeState((prev) => {
+        const next = typeof type === "function" ? type(prev) : type;
+        if (typeof window !== "undefined") {
+          localStorage.setItem("backgroundType", next);
+        }
+        return next;
+      });
+    },
+    []
+  );
   const query = useQuery();
 
   useEffect(() => {
@@ -129,7 +145,8 @@ export default function GlobalState({
         if (resp.user.backgroundType) {
           setBackgroundType(resp.user.backgroundType);
         } else {
-          setBackgroundType("public");
+          // If no preference in DB, use current or default
+          setBackgroundType(backgroundType || "public");
         }
         socket?.emit("connected", {
           ...resp.user,

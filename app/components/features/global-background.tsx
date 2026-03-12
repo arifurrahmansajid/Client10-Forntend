@@ -77,6 +77,7 @@ export default function GlobalbackGround() {
     const abort = new AbortController();
     if (!profileID) {
       if (backgroundType === "private") {
+        if (!user?._id) return; // Wait for user to load on refresh
         handleSetbackGround(user?._id ?? "", abort)
           .then((res) => {
             if (!res) {

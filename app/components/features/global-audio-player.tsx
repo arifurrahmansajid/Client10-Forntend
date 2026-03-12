@@ -48,9 +48,10 @@ export default function GlobalAudioPlayer() {
         setAudioSrc("");
       }
     } else {
+      if (!user?._id) return; // Wait for user to load on refresh
       const audio = await query<{ audio: string }>({
         url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/music/background?user=${
-          user?._id || ""
+          user?._id
         }`,
         method: "GET",
       });
