@@ -30,10 +30,10 @@ export const toTitle = (text: string) => {
 };
 
 export const formatDate = (date: Date) => {
-  if (!date)
+  if (!date || isNaN(date.getTime()))
     return {
-      time: `${new Date().toTimeString()}`,
-      date: `${0}/${0}/${1990}`,
+      time: "--:--",
+      date: "--/--/----",
     };
   const year = date.getFullYear();
   const month = date.getMonth() + 1;

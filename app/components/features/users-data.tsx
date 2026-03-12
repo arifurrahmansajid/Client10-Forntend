@@ -22,7 +22,8 @@ export default function UsersData() {
     void getUsers();
     socket?.on("new-user-registered-all", getUsers);
     socket?.on("user-deleted-all", (deletedUser: UserType) => {
-      setAllUsers((prev) => prev.filter((u) => u._id !== deletedUser._id));
+      if (!deletedUser?._id) return;
+      setAllUsers((prev) => prev.filter((u) => u?._id && u._id !== deletedUser._id));
     });
     return () => {
       socket?.off("new-user-registered-all", getUsers);

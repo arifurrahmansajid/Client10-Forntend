@@ -98,10 +98,16 @@ export default function GlobalState({
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [currentlyChattingWith, setCurrentlyChattingWith] =
     useState<UserType | null>(null);
-  const [backgroundType, setBackgroundTypeState] = useState(
-    (typeof window !== "undefined" && localStorage.getItem("backgroundType")) ||
-      "public"
-  );
+  const [backgroundType, setBackgroundTypeState] = useState("public");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedSource = localStorage.getItem("backgroundType");
+      if (savedSource) {
+        setBackgroundTypeState(savedSource);
+      }
+    }
+  }, []);
 
   const setBackgroundType = useCallback(
     (type: React.SetStateAction<string>) => {
@@ -172,14 +178,15 @@ export default function GlobalState({
       void getUser();
     });
     socket?.on("user-deleted-all", (deletedUser: UserType) => {
-      setChatingWith((prev) => prev.filter((u) => u && deletedUser && u._id !== deletedUser._id));
+      if (!deletedUser?._id) return;
+      setChatingWith((prev) => prev.filter((u) => u?._id && u._id !== deletedUser._id));
       setCurrentlyChattingWith((prev) =>
-        prev?._id === deletedUser?._id ? null : prev
+        prev?._id === deletedUser._id ? null : prev
       );
     });
     return () => {
       abort.abort();
-      socket?.emit("user-disconnected", { ud: user?._id, socketId: socket.id });
+      socket?.emit("user-disconnected", { id: user?._id, socketId: socket.id });
       socket?.off("new-default-profile-all");
       socket?.off("user-deleted-all");
     };

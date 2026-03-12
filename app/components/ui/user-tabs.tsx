@@ -30,8 +30,9 @@ export default function UserTabs({ users }: { users: UserType[] }) {
       setFriends((prev) => [...prev, data]);
     });
     socket?.on("user-deleted-all", (deletedUser: UserType) => {
-      setOnlineUsers((prev) => prev.filter((u) => u._id !== deletedUser._id));
-      setFriends((prev) => prev.filter((u) => u._id !== deletedUser._id));
+      if (!deletedUser?._id) return;
+      setOnlineUsers((prev) => prev.filter((u) => u?._id && u._id !== deletedUser._id));
+      setFriends((prev) => prev.filter((u) => u?._id && u._id !== deletedUser._id));
     });
     return () => {
       socket?.off("online-users");
