@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port=4000",
-    "build": "next build",
+    "dev": "node init && next dev --port=4000",
+    "build": "node init && next build",
     "lint": "next lint",
-    "start": "node server.mjs",
+    "start": "node init && node server.mjs",
     "finstall": "npm install -f"
   },
   "dependencies": {
